@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informe de Ingeniería: Optimización Oracle 11g - Alarmas Dissel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --brand-dark: #020617;
+            --brand-blue: #1e3a8a;
+            --brand-accent: #3b82f6;
+            --bg-slate: #f8fafc;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            scroll-behavior: smooth;
+            background-color: var(--bg-slate);
+            color: #334155;
+            line-height: 1.7;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .mono { font-family: 'Fira Code', monospace; }
+        
+        /* Smooth Sidebar Navigation */
+        .sidebar-link {
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        .sidebar-link:hover {
+            background-color: rgba(59, 130, 246, 0.08);
+            color: var(--brand-accent);
+            border-left-color: var(--brand-accent);
+        }
+        .sidebar-link.active {
+            background-color: #eff6ff;
+            color: var(--brand-accent);
+            border-left-color: var(--brand-accent);
+            font-weight: 700;
+        }
+        
+        /* Premium SQL Terminal */
+        .terminal-window {
+            background: #0f172a;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            margin: 2rem 0;
+            border: 1px solid #1e293b;
+        }
+        .terminal-header {
+            background: #1e293b;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid #334155;
+        }
+        .terminal-dots span {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        .dot-red { background: #ef4444; }
+        .dot-yellow { background: #f59e0b; }
+        .dot-green { background: #10b981; }
+        .terminal-title {
+            margin-left: 10px;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        .terminal-body {
+            padding: 20px;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+        .sql-query {
+            color: #38bdf8;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px dashed #334155;
+        }
+        .sql-result { color: #e2e8f0; }
+
+        /* Enhanced Data Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .data-table th {
+            background-color: #f8fafc;
+            color: #0f172a;
+            font-weight: 800;
+            text-align: left;
+            padding: 16px 20px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .data-table td {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #475569;
+        }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover { background-color: #f8fafc; }
+
+        /* Sleek Charts */
+        .chart-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.02);
+            margin-bottom: 2rem;
+        }
+        .chart-bar-bg { background: #f1f5f9; height: 28px; border-radius: 6px; overflow: hidden; position: relative; width: 100%; }
+        .chart-bar-fill { background: linear-gradient(90deg, #2563eb, #1d4ed8); height: 100%; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px; color: white; font-size: 0.75rem; font-weight: 700; transition: width 1s ease-in-out;}
+        .chart-bar-fill.emerald { background: linear-gradient(90deg, #10b981, #059669); }
+        .chart-bar-fill.amber { background: linear-gradient(90deg, #f59e0b, #d97706); }
+        .chart-bar-fill.slate { background: linear-gradient(90deg, #64748b, #475569); }
+        
+        /* Hide default details marker */
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+
+        section { scroll-margin-top: 3rem; }
+        h1, h2, h3, h4 { color: #0f172a; }
+        p { margin-bottom: 1rem; }
+
+        /* --- PDF PRINT OPTIMIZATIONS --- */
+        @media print {
+            @page { size: A4; margin: 15mm; }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .sidebar { display: none !important; }
+            .main-content { margin-left: 0 !important; width: 100% !important; }
+            .no-print { display: none !important; }
+            
+            body { background: white !important; font-size: 11pt !important; }
+            
+            /* Avoid breaking elements */
+            section, .chart-card, .terminal-window, .data-table, details { 
+                page-break-inside: avoid !important; 
+                break-inside: avoid !important;
+                margin-bottom: 2rem;
+            }
+            h2, h3, h4 { page-break-after: avoid !important; break-after: avoid !important; }
+            
+            /* Expand details for print */
+            details[open] summary ~ * { display: block !important; }
+            details summary ~ * { display: block !important; }
+            
+            /* Fix terminal print contrast */
+            .terminal-window { border: 1px solid #cbd5e1 !important; box-shadow: none !important; }
+            
+            /* Backgrounds adjustments for print */
+            #portada { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+            #portada .absolute { display: none !important; } /* Hide decorative shapes */
+            .bg-slate-900 { background-color: #0f172a !important; color: white !important; }
+            .text-white { color: white !important; }
+            
+            /* Ensure charts show colors */
+            .chart-bar-bg { background-color: #f1f5f9 !important; }
+            .chart-bar-fill { background-color: #2563eb !important; background-image: none !important; }
+            .chart-bar-fill.emerald { background-color: #10b981 !important; background-image: none !important; }
+            .chart-bar-fill.amber { background-color: #f59e0b !important; background-image: none !important; }
+            .chart-bar-fill.slate { background-color: #64748b !important; background-image: none !important; }
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar fixed left-0 top-0 h-screen w-80 bg-white border-r border-slate-200 p-6 flex flex-col z-50 overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+        <div class="mb-8 pt-4">
+            <div class="flex items-center gap-4 text-slate-900 font-black text-xl tracking-tight">
+                <div class="w-12 h-12 flex items-center justify-center bg-white rounded shadow-sm border border-slate-100 p-1">
+                    <img src="https://andreyingenieria.com.co/logo.png" alt="AndreyIngenieria Logo" class="object-contain w-full h-full">
+                </div>
+                <div class="flex flex-col">
+                    <span>DBA Core</span>
+                    <span class="text-[9px] uppercase tracking-[0.2em] font-bold text-slate-400 mt-0.5">Arquitectura de Datos</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-grow space-y-1 overflow-y-auto pr-2 text-sm">
+            <a onclick="scrollToSection('portada')" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 font-medium active" id="link-portada">
+                <i class="fa-solid fa-file-invoice w-4 text-center"></i> Portada
+            </a>
+            <a onclick="scrollToSection('sec-1')" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 font-medium" id="link-sec-1">
+                <i class="fa-solid fa-bolt w-4 text-center"></i> <span><strong class="text-[10px] mr-1">1.</strong>Resumen Ejecutivo</span>
+            </a>
+            <a onclick="scrollToSection('sec-2')" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 font-medium" id="link-sec-2">
+                <i class="fa-solid fa-bullseye w-4 text-center"></i> <span><strong class="text-[10px] mr-1">2.</strong>Alcance y Restricciones</span>
+            </a>
+            <a onclick="scrollToSection('sec-3')" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 font-medium" id="link-sec-3">
+                <i class="fa-solid fa-magnifying-glass w-4 text-center"></i> <span><strong class="text-[10px] mr-1">3.</strong>Fuentes de Evidencia</span>
+            </a>
+            <a onclick="scrollToSection('sec-4')" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 font-medium" id="link-sec-4">
+                <i class="fa-solid fa-chart-simple w-4 text-center"></i> <span><strong class="text-[10px] mr-1">4.</strong>Línea Base Técnica</span>
+            </a>
+            <a onclick="scrollToSection('sec-5')" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 font-medium" id="link-sec-5">
+                <i class="fa-solid fa-screwdriver-wrench w-4 text-center"></i> <span><strong class="text-[10px] mr-1">5.</strong>Actividades Ejecutadas</span>
+            </a>
+            <a onclick="scrollToSection('sec-6')" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 font-medium" id="link-sec-6">
+                <i class="fa-solid fa-clipboard-check w-4 text-center"></i> <span><strong class="text-[10px] mr-1">6.</strong>Estado Post-Intervención</span>
+            </a>
+            <a onclick="scrollToSection('sec-7')" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 font-medium" id="link-sec-7">
+                <i class="fa-solid fa-table-list w-4 text-center"></i> <span><strong class="text-[10px] mr-1">7.</strong>Evaluación Consolidada</span>
+            </a>
+            <a onclick="scrollToSection('sec-8')" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 font-medium" id="link-sec-8">
+                <i class="fa-solid fa-shield-halved w-4 text-center"></i> <span><strong class="text-[10px] mr-1">8.</strong>Riesgos y Decisiones</span>
+            </a>
+            <a onclick="scrollToSection('sec-9')" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 font-medium" id="link-sec-9">
+                <i class="fa-solid fa-lightbulb w-4 text-center"></i> <span><strong class="text-[10px] mr-1">9.</strong>Recomendaciones</span>
+            </a>
+            <a onclick="scrollToSection('sec-10')" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 font-medium" id="link-sec-10">
+                <i class="fa-solid fa-flag-checkered w-4 text-center"></i> <span><strong class="text-[10px] mr-1">10.</strong>Conclusión Final</span>
+            </a>
+            <a onclick="scrollToSection('sec-anexo')" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 font-medium" id="link-sec-anexo">
+                <i class="fa-solid fa-terminal w-4 text-center"></i> <span>Anexo A. Consola</span>
+            </a>
+        </nav>
+
+        <div class="pt-6 border-t border-slate-200 mt-4 pb-4">
+            <div class="bg-gradient-to-br from-slate-50 to-blue-50 p-5 rounded-2xl border border-blue-100/50 shadow-sm text-center">
+                <img src="https://andreyingenieria.com.co/logo.png" alt="AndreyIngenieria" class="h-8 mx-auto mb-2 opacity-80 object-contain">
+                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Elaborado por:</p>
+                <p class="text-xs font-bold text-slate-900 leading-tight">Andrey Ramirez Ospina</p>
+                <p class="text-[9px] text-blue-600 font-black uppercase tracking-widest mt-1">Arquitecto de Software</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content ml-80 min-h-screen">
+
+        <!-- Portada -->
+        <header id="portada" class="bg-white px-16 pt-24 pb-24 border-b border-slate-200 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-1/2 h-full bg-slate-50 -skew-x-12 translate-x-32 z-0"></div>
+            <div class="max-w-5xl relative z-10">
+                
+                <!-- Logos Header -->
+                <div class="flex items-center justify-between mb-12">
+                    <img src="https://dissel.co/wp-content/uploads/2025/08/logo.png" alt="Alarmas Dissel Logo" class="h-16 object-contain">
+                    <div class="hidden print:block">
+                        <img src="https://andreyingenieria.com.co/logo.png" alt="Andrey Ingenieria Logo" class="h-12 object-contain">
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 mb-8">
+                    <span class="px-3 py-1 bg-blue-100 text-blue-700 text-[10px] font-black rounded uppercase tracking-widest border border-blue-200">Arquitectura DBA</span>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Confidencial</span>
+                </div>
+
+                <h1 class="text-5xl md:text-6xl font-black text-slate-900 leading-[1.1] mb-6 tracking-tight">
+                    Informe técnico detallado <br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-blue-500">Optimización controlada del motor Oracle 11g</span>
+                </h1>
+                <p class="text-xl text-slate-500 mb-12 font-medium">
+                    ERP Yeminus | Diagnóstico, ajuste de memoria, validación postcambio y evidencia gráfica
+                </p>
+                
+                <table class="data-table w-full md:w-2/3 mb-12 !shadow-lg">
+                    <tbody>
+                        <tr><td class="font-bold text-slate-900 w-1/3">Sistema evaluado</td><td class="font-medium text-slate-700">ERP Yeminus</td></tr>
+                        <tr><td class="font-bold text-slate-900">Motor</td><td class="font-medium text-slate-700">Oracle Database 11g Enterprise Edition Release 11.2.0</td></tr>
+                        <tr><td class="font-bold text-slate-900">Servidor</td><td class="font-medium text-slate-700">32 GB RAM | 8 CPU cores</td></tr>
+                        <tr><td class="font-bold text-slate-900">Fecha del informe</td><td class="font-medium text-slate-700">2026-03-06</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="bg-blue-50/50 border-l-4 border-blue-500 p-8 rounded-r-2xl">
+                    <p class="text-slate-700 leading-relaxed text-lg">
+                        Este documento consolida la línea base técnica, las actividades ejecutadas, las mediciones obtenidas y la evaluación posterior a la intervención realizada sobre el motor Oracle 11g que soporta el ERP Yeminus. El alcance se limitó deliberadamente a ajustes seguros sobre el motor y validación de estado, sin alterar sentencias SQL ni índices del ERP para evitar riesgos sobre el comportamiento funcional del sistema.
+                    </p>
+                </div>
+            </div>
+        </header>
+
+        <div class="max-w-5xl px-16 py-16">
+            
+            <!-- 1. Resumen ejecutivo -->
+            <section id="sec-1" class="mb-20">
+                <h2 class="text-3xl font-black mb-8 flex items-center gap-4 text-slate-900">
+                    <span class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 text-blue-700 text-xl">1</span>
+                    Resumen ejecutivo
+                </h2>
+                <div class="space-y-5 text-slate-600 text-lg leading-relaxed">
+                    <p>Se ejecutó una optimización y afinamiento controlado del motor Oracle 11g Enterprise enfocado en parámetros de memoria, reutilización de cursores y validación de estado general del host y la instancia. El análisis inicial mostró una configuración con AMM limitada a 13.75 GB sobre un servidor con 32 GB de RAM, un buffer cache hit ratio base de 89.73%, baja presión de CPU, baja utilización de sesiones/procesos y ausencia de contención severa. Bajo ese contexto se incrementó la memoria total administrada por Oracle a 20 GB y se elevó <code>session_cached_cursors</code> de 50 a 100, manteniendo intactas las estructuras y consultas del ERP Yeminus.</p>
+                    <p>No se modificaron índices, planes de ejecución ni consultas del ERP, por tratarse de componentes de aplicación bajo control funcional del sistema Yeminus.</p>
+                    <p>El motor quedó operando con <code>memory_target = 20 GB</code> y <code>memory_max_target = 20 GB</code>, manteniendo Automatic Memory Management.</p>
+                    <p>La evidencia posterior al reinicio muestra una SGA máxima de 20.39 GB, Buffer Cache inicial de 6.27 GB, Shared Pool de 1.28 GB y 12.6 GB de memoria aún disponibles para crecimiento dinámico según carga.</p>
+                    <p>El buffer cache hit ratio medido inmediatamente después del reinicio cayó a 83.61%; esto es esperable por caché fría y no se interpreta como deterioro estructural.</p>
+                    <p>El host permanece sin presión de CPU y sin saturación de processes/sessions; por tanto, el beneficio esperado del ajuste es preventivo y de mejor aprovechamiento de memoria, no una corrección de sobrecarga crítica.</p>
+                </div>
+            </section>
+
+            <!-- 2. Alcance -->
+            <section id="sec-2" class="mb-20">
+                <h2 class="text-3xl font-black mb-8 flex items-center gap-4 text-slate-900">
+                    <span class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 text-blue-700 text-xl">2</span>
+                    Alcance, restricciones y criterio de intervención
+                </h2>
+                <p class="mb-8 text-slate-600 text-lg">El trabajo se diseñó bajo un principio de riesgo mínimo. Se ejecutaron únicamente actividades que no comprometen datos ni estructura funcional del ERP. El alcance incluyó diagnóstico de parámetros, eventos de espera, SQL costosos, segmentación de crecimiento, objetos inválidos, consumo de memoria, utilización de CPU y límites de sesiones/procesos.</p>
+                <table class="data-table !shadow-md">
+                    <thead class="bg-slate-100">
+                        <tr>
+                            <th class="w-32 text-center text-[10px]">Cobertura</th>
+                            <th class="text-[10px]">Detalle de la Actividad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="text-center font-black text-emerald-600 bg-emerald-50/30">Sí</td>
+                            <td class="font-medium text-slate-700">Revisión y ajuste de parámetros de memoria administrada por Oracle.</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center font-black text-emerald-600 bg-emerald-50/30">Sí</td>
+                            <td class="font-medium text-slate-700">Ajuste de session_cached_cursors y verificación postreinicio.</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center font-black text-emerald-600 bg-emerald-50/30">Sí</td>
+                            <td class="font-medium text-slate-700">Análisis de wait events, parsing, PGA, SGA y utilización de recursos.</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center font-black text-blue-600 bg-blue-50/30">Sí</td>
+                            <td class="font-medium text-slate-700"><strong>[Nuevo]</strong> Depuración de logs de auditoría interna y ajuste de retención de estadísticas del motor para liberar almacenamiento.</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center font-black text-slate-400 bg-slate-50">No</td>
+                            <td class="text-slate-500 italic">Optimización o reescritura de SQL generados por el ERP Yeminus.</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center font-black text-slate-400 bg-slate-50">No</td>
+                            <td class="text-slate-500 italic">Creación, eliminación o rebuild de índices del modelo funcional del ERP.</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center font-black text-slate-400 bg-slate-50">No</td>
+                            <td class="text-slate-500 italic">Cambios sobre tablas, datos, paquetes, vistas o lógica de negocio del aplicativo.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- 3. Fuentes Interactivas -->
+            <section id="sec-3" class="mb-20">
+                <h2 class="text-3xl font-black mb-8 flex items-center gap-4 text-slate-900">
+                    <span class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 text-blue-700 text-xl">3</span>
+                    Fuentes de evidencia utilizadas
+                </h2>
+                <p class="mb-8 text-slate-600 text-lg">El informe se soporta en evidencias exportadas desde la instancia y en capturas posteriores a la intervención. Se usaron, entre otros, los siguientes insumos <span class="no-print text-sm font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md ml-2"><i class="fa-solid fa-hand-pointer mr-1"></i> Haz clic para expandir su impacto</span>:</p>
+                
+                <div class="space-y-4">
+                    <!-- Item 1 -->
+                    <details class="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow group print:shadow-none print:border-b">
+                        <summary class="flex items-center justify-between p-6 cursor-pointer outline-none">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-blue-600 shrink-0 shadow-sm print:shadow-none">
+                                    <i class="fa-solid fa-file-lines"></i>
+                                </div>
+                                <div class="font-medium text-slate-700 text-lg mt-1 pr-4">
+                                    Parámetros base del motor: <code>Parametos del motor.txt</code> y <code>parametros detalle.txt</code>.
+                                </div>
+                            </div>
+                            <div class="text-slate-400 group-open:rotate-180 transition-transform duration-300 shrink-0 no-print">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                        </summary>
+                        <div class="px-6 pb-6 pt-2 border-t border-slate-100 flex flex-col lg:flex-row gap-6 bg-slate-50 rounded-b-2xl print:bg-white">
+                            <div class="flex-1">
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2"><i class="fa-solid fa-magnifying-glass text-slate-300"></i> Contenido Extraído</p>
+                                <p class="text-sm text-slate-600 leading-relaxed">Configuración residente en el SPFILE, límites administrados de memoria (<code>memory_target</code>), configuración de cursores activos (<code>session_cached_cursors</code>) y topes de procesos de la instancia en su estado original.</p>
+                            </div>
+                            <div class="flex-1 bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 print:border-slate-300 print:bg-slate-50">
+                                <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 flex items-center gap-2 print:text-slate-700"><i class="fa-solid fa-bullseye"></i> Impacto en Arquitectura</p>
+                                <p class="text-sm text-blue-900 leading-relaxed print:text-slate-700">Permitió descubrir la subutilización drástica del servidor (el motor solo gestionaba 13.75GB de los 32GB físicos). Esto trazó la hoja de ruta inmediata para el escalamiento vertical a 20GB sin requerir hardware nuevo.</p>
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- Item 2 -->
+                    <details class="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow group print:shadow-none print:border-b">
+                        <summary class="flex items-center justify-between p-6 cursor-pointer outline-none">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-blue-600 shrink-0 shadow-sm print:shadow-none">
+                                    <i class="fa-solid fa-stopwatch"></i>
+                                </div>
+                                <div class="font-medium text-slate-700 text-lg mt-1 pr-4">
+                                    Eventos de espera: <code>Principales Eventos de Espera.txt</code> y <code>Esperas no idle.txt</code>.
+                                </div>
+                            </div>
+                            <div class="text-slate-400 group-open:rotate-180 transition-transform duration-300 shrink-0 no-print">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                        </summary>
+                        <div class="px-6 pb-6 pt-2 border-t border-slate-100 flex flex-col lg:flex-row gap-6 bg-slate-50 rounded-b-2xl print:bg-white">
+                            <div class="flex-1">
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2"><i class="fa-solid fa-magnifying-glass text-slate-300"></i> Contenido Extraído</p>
+                                <p class="text-sm text-slate-600 leading-relaxed">Registros consolidados de <code>v$system_event</code> que cuantifican el tiempo acumulado por el motor en latencia de red, accesos I/O de disco físico y bloqueos transaccionales (<code>enq: TX</code>).</p>
+                            </div>
+                            <div class="flex-1 bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 print:border-slate-300 print:bg-slate-50">
+                                <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 flex items-center gap-2 print:text-slate-700"><i class="fa-solid fa-bullseye"></i> Impacto en Arquitectura</p>
+                                <p class="text-sm text-blue-900 leading-relaxed print:text-slate-700">Confirmó la ausencia de contención crítica por concurrencia o bloqueos de tabla. Esto orientó el esfuerzo de afinamiento exclusivamente hacia la memoria caché y la red, descartando costosas refactorizaciones de lógica transaccional.</p>
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- Item 3 -->
+                    <details class="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow group print:shadow-none print:border-b">
+                        <summary class="flex items-center justify-between p-6 cursor-pointer outline-none">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-blue-600 shrink-0 shadow-sm print:shadow-none">
+                                    <i class="fa-solid fa-code"></i>
+                                </div>
+                                <div class="font-medium text-slate-700 text-lg mt-1 pr-4">
+                                    Top SQL por tiempo, CPU, lecturas físicas y promedio de ejecución.
+                                </div>
+                            </div>
+                            <div class="text-slate-400 group-open:rotate-180 transition-transform duration-300 shrink-0 no-print">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                        </summary>
+                        <div class="px-6 pb-6 pt-2 border-t border-slate-100 flex flex-col lg:flex-row gap-6 bg-slate-50 rounded-b-2xl print:bg-white">
+                            <div class="flex-1">
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2"><i class="fa-solid fa-magnifying-glass text-slate-300"></i> Contenido Extraído</p>
+                                <p class="text-sm text-slate-600 leading-relaxed">Métricas de <code>v$sql</code> y repositorios AWR que exponen los IDs de las sentencias con mayor Elapsed Time, conteo de <em>Hard Parses</em> y lecturas a disco (ej. consultas repetitivas a tablas <code>CIUDADES</code> y <code>PAISES</code>).</p>
+                            </div>
+                            <div class="flex-1 bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 print:border-slate-300 print:bg-slate-50">
+                                <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 flex items-center gap-2 print:text-slate-700"><i class="fa-solid fa-bullseye"></i> Impacto en Arquitectura</p>
+                                <p class="text-sm text-blue-900 leading-relaxed print:text-slate-700">Justificó técnicamente la necesidad de duplicar el parámetro <code>session_cached_cursors</code> a 100. Esto mitiga la penalización de CPU causada por el aplicativo ERP al compilar recurrentemente las mismas consultas.</p>
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- Item 4 -->
+                    <details class="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow group print:shadow-none print:border-b">
+                        <summary class="flex items-center justify-between p-6 cursor-pointer outline-none">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-blue-600 shrink-0 shadow-sm print:shadow-none">
+                                    <i class="fa-solid fa-database"></i>
+                                </div>
+                                <div class="font-medium text-slate-700 text-lg mt-1 pr-4">
+                                    Segmentos más grandes por tablespace y ocupación del diccionario (SYSAUX).
+                                </div>
+                            </div>
+                            <div class="text-slate-400 group-open:rotate-180 transition-transform duration-300 shrink-0 no-print">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                        </summary>
+                        <div class="px-6 pb-6 pt-2 border-t border-slate-100 flex flex-col lg:flex-row gap-6 bg-slate-50 rounded-b-2xl print:bg-white">
+                            <div class="flex-1">
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2"><i class="fa-solid fa-magnifying-glass text-slate-300"></i> Contenido Extraído</p>
+                                <p class="text-sm text-slate-600 leading-relaxed">Mapeo estructural cruzando <code>dba_segments</code> y <code>v$sysaux_occupants</code> para aislar tablas de alto peso, LOBs (Large Objects > 4GB) y la acumulación de datos históricos del propio motor (AWR).</p>
+                            </div>
+                            <div class="flex-1 bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 print:border-slate-300 print:bg-slate-50">
+                                <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 flex items-center gap-2 print:text-slate-700"><i class="fa-solid fa-bullseye"></i> Impacto en Arquitectura</p>
+                                <p class="text-sm text-blue-900 leading-relaxed print:text-slate-700">Sustentó matemáticamente la expansión del <em>Buffer Cache</em> para poder alojar los bloques de estos inmensos LOBs. Además, desencadenó la ejecución de la purga de estadísticas (DBMS_STATS) para liberar más de 4GB en el diccionario.</p>
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- Item 5 -->
+                    <details class="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow group print:shadow-none print:border-b">
+                        <summary class="flex items-center justify-between p-6 cursor-pointer outline-none">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-blue-600 shrink-0 shadow-sm print:shadow-none">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                </div>
+                                <div class="font-medium text-slate-700 text-lg mt-1 pr-4">
+                                    Índices existentes y estado; objetos inválidos y errores de compilación.
+                                </div>
+                            </div>
+                            <div class="text-slate-400 group-open:rotate-180 transition-transform duration-300 shrink-0 no-print">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                        </summary>
+                        <div class="px-6 pb-6 pt-2 border-t border-slate-100 flex flex-col lg:flex-row gap-6 bg-slate-50 rounded-b-2xl print:bg-white">
+                            <div class="flex-1">
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2"><i class="fa-solid fa-magnifying-glass text-slate-300"></i> Contenido Extraído</p>
+                                <p class="text-sm text-slate-600 leading-relaxed">Reporte del diccionario <code>dba_objects</code> detallando el hallazgo de 40 objetos caídos o descompilados (principalmente vistas) con errores de dependencia rota (ej. <code>ORA-00942</code>).</p>
+                            </div>
+                            <div class="flex-1 bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 print:border-slate-300 print:bg-slate-50">
+                                <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 flex items-center gap-2 print:text-slate-700"><i class="fa-solid fa-bullseye"></i> Impacto en Arquitectura</p>
+                                <p class="text-sm text-blue-900 leading-relaxed print:text-slate-700">Estableció un cerco estricto de riesgo. Al detectar que el ecosistema ya poseía objetos inválidos preexistentes, se decidió como política arquitectónica <strong>no realizar rebuilds de índices</strong> para blindar el entorno y no afectar la garantía del proveedor del ERP.</p>
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- Item 6 -->
+                    <details class="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow group print:shadow-none print:border-b">
+                        <summary class="flex items-center justify-between p-6 cursor-pointer outline-none">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-blue-600 shrink-0 shadow-sm print:shadow-none">
+                                    <i class="fa-solid fa-camera"></i>
+                                </div>
+                                <div class="font-medium text-slate-700 text-lg mt-1 pr-4">
+                                    Capturas de validación posteriores a los cambios: parámetros AMM, distribución de SGA, buffer cache hit ratio, métricas PGA, CPU y límites de resources.
+                                </div>
+                            </div>
+                            <div class="text-slate-400 group-open:rotate-180 transition-transform duration-300 shrink-0 no-print">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                        </summary>
+                        <div class="px-6 pb-6 pt-2 border-t border-slate-100 flex flex-col lg:flex-row gap-6 bg-slate-50 rounded-b-2xl print:bg-white">
+                            <div class="flex-1">
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2"><i class="fa-solid fa-magnifying-glass text-slate-300"></i> Contenido Extraído</p>
+                                <p class="text-sm text-slate-600 leading-relaxed">Logs transaccionales de consola consultando <code>v$sgainfo</code>, <code>v$pgastat</code> y <code>v$osstat</code>, tomados inmediatamente después del levantamiento de la instancia (condición de <em>Cold Cache</em>).</p>
+                            </div>
+                            <div class="flex-1 bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 print:border-slate-300 print:bg-slate-50">
+                                <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 flex items-center gap-2 print:text-slate-700"><i class="fa-solid fa-bullseye"></i> Impacto en Arquitectura</p>
+                                <p class="text-sm text-blue-900 leading-relaxed print:text-slate-700">Certificó auditablemente el éxito técnico de la intervención: Acreditó la persistencia de los 20GB, validó la existencia de 12.6GB libres en SGA listos para expansión, y demostró que la CPU mantuvo una holgura del 92% IDLE tras el arranque.</p>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+            </section>
+
+            <!-- 4. Línea base -->
+            <section id="sec-4" class="mb-20">
+                <h2 class="text-3xl font-black mb-10 flex items-center gap-4 text-slate-900 border-b border-slate-200 pb-4">
+                    <span class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 text-blue-700 text-xl">4</span>
+                    Línea base técnica previa a la intervención
+                </h2>
+                
+                <h3 class="text-2xl font-bold mb-6 text-slate-800">4.1 Configuración inicial de memoria y parámetros críticos</h3>
+                <p class="mb-6 text-slate-600 text-lg">La línea base mostraba una instancia Oracle 11g con Automatic Memory Management habilitado y un techo de 13.75 GB para SGA + PGA. Sobre un host de 32 GB, esta configuración dejaba memoria sin explotar desde el punto de vista del motor.</p>
+                
+                <div class="terminal-window">
+                    <div class="terminal-header">
+                        <div class="terminal-dots"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span></div>
+                        <div class="terminal-title">SQL*Plus - Línea Base Memoria</div>
+                    </div>
+                    <div class="terminal-body mono">
+                        <div class="text-slate-500 mb-4 border-b border-slate-700 pb-3 leading-relaxed text-xs print:text-slate-700 print:border-slate-300">
+                            SQL*Plus: Release 11.2.0.4.0 Production<br>
+                            Connected to: <span class="text-slate-300 print:text-slate-900">Oracle Database 11g Enterprise Edition Release 11.2.0</span>
+                        </div>
+                        <div class="sql-query">SQL> show parameter memory; <br>SQL> show parameter sga; <br>SQL> show parameter cursor;</div>
+                        <div class="sql-result">
+                            <table class="w-full text-left mt-2">
+                                <tr><th class="pb-2 text-slate-400 print:text-slate-700">NAME</th><th class="pb-2 text-slate-400 print:text-slate-700">VALUE</th></tr>
+                                <tr><td>memory_max_target</td><td>13757317120</td></tr>
+                                <tr><td>memory_target</td><td>13757317120</td></tr>
+                                <tr><td>sga_max_size</td><td>13757317120</td></tr>
+                                <tr><td>sga_target</td><td>0</td></tr>
+                                <tr><td>session_cached_cursors</td><td>50</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <table class="data-table mb-10 !shadow-md">
+                    <thead>
+                        <tr><th>Parámetro</th><th>Valor base</th><th>Interpretación</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="font-mono text-sm font-bold text-slate-700">memory_target</td><td class="font-bold">13.75 GB</td><td>AMM habilitado; límite total de memoria Oracle.</td></tr>
+                        <tr><td class="font-mono text-sm font-bold text-slate-700">memory_max_target</td><td class="font-bold">13.75 GB</td><td>Techo máximo igual al objetivo.</td></tr>
+                        <tr><td class="font-mono text-sm font-bold text-slate-700">sga_target</td><td class="font-bold">0</td><td>No se fijaba SGA manual; Oracle redistribuía memoria dinámicamente.</td></tr>
+                        <tr><td class="font-mono text-sm font-bold text-slate-700">db_cache_size</td><td class="font-bold">0</td><td>No existía fijación manual del buffer cache.</td></tr>
+                        <tr><td class="font-mono text-sm font-bold text-slate-700">shared_pool_size</td><td class="font-bold">0</td><td>No existía fijación manual del shared pool.</td></tr>
+                        <tr><td class="font-mono text-sm font-bold text-slate-700">session_cached_cursors</td><td class="font-bold">50</td><td>Reutilización de cursores conservadora.</td></tr>
+                        <tr><td class="font-mono text-sm font-bold text-slate-700">open_cursors</td><td class="font-bold">300</td><td>Límite por sesión adecuado.</td></tr>
+                        <tr><td class="font-mono text-sm font-bold text-slate-700">processes / sessions</td><td class="font-bold">150 / 248</td><td>Holgura razonable según los picos medidos.</td></tr>
+                    </tbody>
+                </table>
+                
+                <div class="chart-card mb-12">
+                    <h4 class="text-center font-bold mb-8 text-slate-500 uppercase tracking-widest text-[10px]">Figura 1. Comparativo de capacidad total Oracle antes y después del ajuste.</h4>
+                    <div class="grid grid-cols-2 gap-12 items-end h-48 px-8">
+                        <div class="flex flex-col items-center gap-3 w-full group">
+                            <span class="font-black text-xl text-slate-700">13.75 GB</span>
+                            <div class="w-full bg-slate-200 rounded-t-xl transition-all h-[43%] group-hover:bg-slate-300 print:bg-slate-300" style="background-color: #e2e8f0;"></div>
+                            <span class="text-xs font-bold text-slate-500 uppercase">Antes (memory_target)</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-3 w-full group">
+                            <span class="font-black text-xl text-blue-600">20.00 GB</span>
+                            <div class="w-full bg-gradient-to-t from-blue-700 to-blue-500 rounded-t-xl transition-all h-[62.5%] shadow-lg shadow-blue-200 print:bg-blue-600" style="background-color: #2563eb;"></div>
+                            <span class="text-xs font-bold text-slate-500 uppercase">Después (memory_target)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="text-2xl font-bold mb-6 mt-16 text-slate-800">4.2 Comportamiento de CPU, procesos y sesiones</h3>
+                <p class="mb-6 text-slate-600 text-lg">Las mediciones del host y de la instancia descartaron una condición de saturación de CPU o de límites de sesiones/procesos. La plataforma contaba con 8 cores y el tiempo ocioso del host era claramente dominante frente al tiempo ocupado.</p>
+                
+                <div class="terminal-window">
+                    <div class="terminal-header">
+                        <div class="terminal-dots"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span></div>
+                        <div class="terminal-title">SQL*Plus - OS Stat & Resource Limit</div>
+                    </div>
+                    <div class="terminal-body mono">
+                        <div class="text-slate-500 mb-4 border-b border-slate-700 pb-3 leading-relaxed text-xs print:text-slate-700 print:border-slate-300">
+                            SQL*Plus: Release 11.2.0.4.0 Production<br>
+                            Connected to: <span class="text-slate-300 print:text-slate-900">Oracle Database 11g Enterprise Edition Release 11.2.0</span>
+                        </div>
+                        <div class="sql-query">SELECT stat_name, value FROM v$osstat WHERE stat_name IN ('NUM_CPUS', 'IDLE_TIME', 'BUSY_TIME');<br>SELECT resource_name, current_utilization, limit_value FROM v$resource_limit WHERE resource_name IN ('processes', 'sessions');</div>
+                        <div class="sql-result text-emerald-400 print:text-slate-900">
+                            > NUM_CPUS: 8 | IDLE_TIME: 727131 | BUSY_TIME: 61368 <br>
+                            > PROCESSES: 56 / 150 | SESSIONS: 60 / 248
+                        </div>
+                    </div>
+                </div>
+
+                <table class="data-table mb-10">
+                    <thead>
+                        <tr><th>Indicador</th><th>Valor</th><th>Lectura técnica</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="font-bold text-slate-700">CPU cores</td><td class="font-bold">8</td><td>Capacidad disponible del host.</td></tr>
+                        <tr><td class="font-bold text-slate-700">Busy time</td><td class="font-bold">61,368</td><td>Sin evidencia de saturación sostenida.</td></tr>
+                        <tr><td class="font-bold text-slate-700">Idle time</td><td class="font-bold text-blue-600">727,131</td><td>Predominio de tiempo ocioso.</td></tr>
+                        <tr><td class="font-bold text-slate-700">Processes actual / pico / límite</td><td class="font-bold">56 / 60 / 150</td><td>Muy por debajo del umbral.</td></tr>
+                        <tr><td class="font-bold text-slate-700">Sessions actual / pico / límite</td><td class="font-bold">60 / 64 / 248</td><td>Amplio margen operativo.</td></tr>
+                    </tbody>
+                </table>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                    <div class="chart-card flex flex-col items-center">
+                        <h4 class="text-center font-bold mb-8 text-slate-500 text-[10px] uppercase tracking-widest">Figura 2. Distribución Busy vs Idle del host observado.</h4>
+                        <div class="relative w-48 h-48 flex items-center justify-center">
+                            <svg class="w-full h-full transform -rotate-90">
+                                <circle cx="96" cy="96" r="80" stroke="#f97316" stroke-width="24" fill="transparent" /> 
+                                <circle cx="96" cy="96" r="80" stroke="#1e3a8a" stroke-width="24" fill="transparent" stroke-dasharray="502.6" stroke-dashoffset="463.4" />
+                            </svg>
+                            <div class="absolute text-center">
+                                <span class="block text-2xl font-black">92.2%</span>
+                                <span class="block text-[10px] font-bold text-slate-400">IDLE</span>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex gap-6 text-xs font-bold uppercase tracking-widest text-slate-600">
+                            <div class="flex items-center gap-2"><span class="w-3 h-3 bg-blue-900 rounded-sm inline-block" style="background-color: #1e3a8a;"></span> Busy (7.8%)</div>
+                            <div class="flex items-center gap-2"><span class="w-3 h-3 bg-orange-500 rounded-sm inline-block" style="background-color: #f97316;"></span> Idle (92.2%)</div>
+                        </div>
+                    </div>
+                    <div class="chart-card flex flex-col justify-end">
+                        <h4 class="text-center font-bold mb-8 text-slate-500 text-[10px] uppercase tracking-widest">Figura 3. Uso de procesos y sesiones</h4>
+                        <div class="flex justify-around items-end h-48 gap-4 px-4">
+                            <div class="w-full flex flex-col items-center gap-2 group"><span class="text-xs font-bold">37.3%</span><div class="w-full bg-blue-500 rounded-t-lg h-[37.3%] group-hover:bg-blue-600 transition-colors print:bg-blue-600" style="background-color: #3b82f6;"></div><span class="text-[10px] text-center font-medium text-slate-500 uppercase">Processes actual</span></div>
+                            <div class="w-full flex flex-col items-center gap-2 group"><span class="text-xs font-bold">40.0%</span><div class="w-full bg-blue-500 rounded-t-lg h-[40%] group-hover:bg-blue-600 transition-colors print:bg-blue-600" style="background-color: #3b82f6;"></div><span class="text-[10px] text-center font-medium text-slate-500 uppercase">Processes pico</span></div>
+                            <div class="w-full flex flex-col items-center gap-2 group"><span class="text-xs font-bold">24.2%</span><div class="w-full bg-blue-500 rounded-t-lg h-[24.2%] group-hover:bg-blue-600 transition-colors print:bg-blue-600" style="background-color: #3b82f6;"></div><span class="text-[10px] text-center font-medium text-slate-500 uppercase">Sessions actual</span></div>
+                            <div class="w-full flex flex-col items-center gap-2 group"><span class="text-xs font-bold">25.8%</span><div class="w-full bg-blue-500 rounded-t-lg h-[25.8%] group-hover:bg-blue-600 transition-colors print:bg-blue-600" style="background-color: #3b82f6;"></div><span class="text-[10px] text-center font-medium text-slate-500 uppercase">Sessions pico</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="text-2xl font-bold mb-6 mt-16 text-slate-800">4.3 Eventos de espera y comportamiento general de la instancia</h3>
+                <p class="mb-6 text-slate-600 text-lg">Los principales eventos observados corresponden en su mayoría a esperas de naturaleza idle o de interacción cliente-servidor, lo cual es consistente con una instancia estable y sin contención interna severa. Se identificó un evento <code>enq: TX - row lock contention</code>, pero con incidencia muy baja en relación con el total de la actividad observada.</p>
+                
+                <div class="terminal-window">
+                    <div class="terminal-header">
+                        <div class="terminal-dots"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span></div>
+                        <div class="terminal-title">SQL*Plus - v$system_event</div>
+                    </div>
+                    <div class="terminal-body mono">
+                        <div class="text-slate-500 mb-4 border-b border-slate-700 pb-3 leading-relaxed text-xs print:text-slate-700 print:border-slate-300">
+                            SQL*Plus: Release 11.2.0.4.0 Production<br>
+                            Connected to: <span class="text-slate-300 print:text-slate-900">Oracle Database 11g Enterprise Edition Release 11.2.0</span>
+                        </div>
+                        <div class="sql-query">SELECT event, total_waits, time_waited FROM v$system_event ORDER BY time_waited DESC;</div>
+                        <div class="sql-result">
+                            <table class="w-full text-left mt-2 text-slate-300 print:text-slate-900">
+                                <tr><th class="pb-2 text-slate-500 print:text-slate-700">EVENT</th><th class="pb-2 text-slate-500 print:text-slate-700 text-right">TOTAL_WAITS</th></tr>
+                                <tr><td>SQL*Net message from client</td><td class="text-right">392,912,401</td></tr>
+                                <tr><td>rdbms ipc message</td><td class="text-right">65,640,112</td></tr>
+                                <tr><td class="text-yellow-400 print:text-slate-900 font-bold">enq: TX - row lock contention</td><td class="text-right text-yellow-400 print:text-slate-900 font-bold">1,204</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-card mb-8">
+                    <h4 class="text-center font-bold mb-8 text-slate-500 text-[10px] uppercase tracking-widest">Figura 4. Principales eventos de espera observados (TIME_WAITED millones)</h4>
+                    <div class="space-y-4 px-4">
+                        <div class="flex items-center"><div class="w-1/3 text-xs text-right pr-4 font-bold text-slate-700">rdbms ipc message</div><div class="w-2/3"><div class="chart-bar-bg"><div class="chart-bar-fill shadow-md" style="width: 95%; background-color: #2563eb;">392.9</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/3 text-xs text-right pr-4 font-bold text-slate-700">DIAG idle wait</div><div class="w-2/3"><div class="chart-bar-bg"><div class="chart-bar-fill shadow-md" style="width: 25%; background-color: #2563eb;">65.6</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/3 text-xs text-right pr-4 font-bold text-slate-700">jobq slave wait</div><div class="w-2/3"><div class="chart-bar-bg"><div class="chart-bar-fill shadow-md" style="width: 15%; background-color: #2563eb;">36.5</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/3 text-xs text-right pr-4 font-bold text-slate-700">Space Manager: slave idle</div><div class="w-2/3"><div class="chart-bar-bg"><div class="chart-bar-fill shadow-md" style="width: 13%; background-color: #2563eb;">33.2</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/3 text-xs text-right pr-4 font-bold text-slate-700">shared server idle wait</div><div class="w-2/3"><div class="chart-bar-bg"><div class="chart-bar-fill shadow-md" style="width: 12%; background-color: #2563eb;">32.8</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/3 text-xs text-right pr-4 font-bold text-slate-700">pmon timer</div><div class="w-2/3"><div class="chart-bar-bg"><div class="chart-bar-fill shadow-md" style="width: 12%; background-color: #2563eb;">32.8</div></div></div></div>
+                    </div>
+                </div>
+
+                <table class="data-table mb-12">
+                    <thead>
+                        <tr><th>Evento / grupo</th><th>Conclusión</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="font-bold text-sm text-slate-700">SQL*Net message from client</td><td>Esperable; indica tiempo de espera sobre el cliente, no cuello de botella del motor.</td></tr>
+                        <tr><td class="font-bold text-sm text-slate-700">rdbms ipc message</td><td>Evento interno de sincronización; no representa por sí mismo un problema de desempeño.</td></tr>
+                        <tr><td class="font-bold text-sm text-slate-700">control file sequential read / parallel write</td><td>Bajo impacto relativo.</td></tr>
+                        <tr><td class="font-bold text-sm text-amber-600">enq: TX - row lock contention</td><td>Presencia puntual; no dominante en la línea base.</td></tr>
+                        <tr><td class="font-bold text-sm text-slate-700">log file sync</td><td>Medición baja, sin indicio de presión crítica de redo.</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="text-2xl font-bold mb-6 mt-16 text-slate-800">4.4 SQL con mayor consumo y restricciones de optimización aplicativa</h3>
+                <p class="mb-6 text-slate-600 text-lg">El análisis de top SQL mostró consultas intensivas generadas por el ERP para inspección de metadatos y consultas administrativas, particularmente sobre <code>all_constraints</code>/<code>all_cons_columns</code> y operaciones sobre tablas de alertas. Estas sentencias concentran tiempo de CPU y elapsed time; sin embargo, por gobernanza del aplicativo no se modificaron sentencias SQL ni índices asociados.</p>
+
+                <div class="chart-card mb-8">
+                    <h4 class="text-center font-bold mb-8 text-slate-500 text-[10px] uppercase tracking-widest">Figura 5. Top SQL por tiempo total (línea base) - Segundos acumulados</h4>
+                    <div class="space-y-5 px-4">
+                        <div class="flex items-center"><div class="w-1/2 text-xs text-right pr-4 font-mono font-bold text-slate-700">75tn9t9upqv3y | GEMINUS02</div><div class="w-1/2"><div class="chart-bar-bg"><div class="chart-bar-fill" style="width: 100%; background-color: #2563eb;">1192s</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/2 text-xs text-right pr-4 font-mono font-bold text-slate-700">4qnh7g892thx2 | GEMINUS02</div><div class="w-1/2"><div class="chart-bar-bg"><div class="chart-bar-fill" style="width: 98%; background-color: #2563eb;">1171s</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/2 text-xs text-right pr-4 font-mono font-bold text-slate-700">7a7zhw0f4b8rg | ADMIN_CONFIG</div><div class="w-1/2"><div class="chart-bar-bg"><div class="chart-bar-fill slate" style="width: 35%; background-color: #64748b;">418s</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/2 text-xs text-right pr-4 font-mono font-bold text-slate-700">6gvch1xu9ca3g | SYSMAN</div><div class="w-1/2"><div class="chart-bar-bg"><div class="chart-bar-fill slate" style="width: 25%; background-color: #64748b;">303s</div></div></div></div>
+                    </div>
+                </div>
+                <div class="mb-12 border-l-4 border-amber-500 bg-amber-50 p-6 rounded-r-xl shadow-sm">
+                    <p class="text-amber-900 font-medium"><strong>Hallazgo relevante:</strong> las dos sentencias con mayor tiempo total corresponden a consultas repetitivas sobre claves primarias de CIUDADES y PAISES generadas desde el esquema GEMINUS02. Este patrón sugiere carga generada por la aplicación, no por el motor como tal.</p>
+                </div>
+
+                <h3 class="text-2xl font-bold mb-6 mt-16 text-slate-800">4.5 Parsing, reutilización de cursores y objetos inválidos</h3>
+                <p class="mb-6 text-slate-600 text-lg">La línea base y las validaciones posteriores mostraron una carga de parsing significativa, aunque no extrema. El ajuste sobre <code>session_cached_cursors</code> buscó precisamente mejorar la reutilización de cursores por sesión y reducir overhead de parse en operaciones repetitivas.</p>
+                
+                <div class="terminal-window">
+                    <div class="terminal-header">
+                        <div class="terminal-dots"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span></div>
+                        <div class="terminal-title">SQL*Plus - v$sysstat (Parsing)</div>
+                    </div>
+                    <div class="terminal-body mono">
+                        <div class="text-slate-500 mb-4 border-b border-slate-700 pb-3 leading-relaxed text-xs print:text-slate-700 print:border-slate-300">
+                            SQL*Plus: Release 11.2.0.4.0 Production<br>
+                            Connected to: <span class="text-slate-300 print:text-slate-900">Oracle Database 11g Enterprise Edition Release 11.2.0</span>
+                        </div>
+                        <div class="sql-query">SELECT name, value FROM v$sysstat WHERE name LIKE '%parse count%';</div>
+                        <div class="sql-result text-emerald-400 print:text-slate-900">
+                            NAME                           VALUE <br>
+                            ------------------------------ ----------- <br>
+                            parse count (total)            10420 <br>
+                            parse count (hard)             1568 <br>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <div class="chart-card flex flex-col justify-end">
+                        <h4 class="text-center font-bold mb-8 text-slate-500 text-[10px] uppercase tracking-widest">Figura 6. Indicadores de parsing observados</h4>
+                        <div class="flex justify-around items-end h-48 gap-4 px-2">
+                            <div class="w-full flex flex-col items-center gap-2 group"><span class="text-xs font-black">23,082</span><div class="w-full bg-blue-600 rounded-t-lg h-[100%] transition-all print:bg-blue-600" style="background-color: #2563eb;"></div><span class="text-[9px] text-center font-bold text-slate-500 uppercase">Execute count</span></div>
+                            <div class="w-full flex flex-col items-center gap-2 group"><span class="text-xs font-black">10,420</span><div class="w-full bg-blue-500 rounded-t-lg h-[45%] transition-all print:bg-blue-600" style="background-color: #3b82f6;"></div><span class="text-[9px] text-center font-bold text-slate-500 uppercase">Parse total</span></div>
+                            <div class="w-full flex flex-col items-center gap-2 group"><span class="text-xs font-black text-red-500">1,568</span><div class="w-full bg-red-500 rounded-t-lg h-[7%] transition-all print:bg-red-500" style="background-color: #ef4444;"></div><span class="text-[9px] text-center font-bold text-slate-500 uppercase">Hard parse</span></div>
+                            <div class="w-full flex flex-col items-center gap-2 group"><span class="text-xs font-black text-emerald-600">17,725</span><div class="w-full bg-emerald-500 rounded-t-lg h-[76%] transition-all print:bg-emerald-500" style="background-color: #10b981;"></div><span class="text-[9px] text-center font-bold text-slate-500 uppercase">Session hits</span></div>
+                        </div>
+                    </div>
+                    <div class="chart-card flex flex-col justify-end">
+                        <h4 class="text-center font-bold mb-8 text-slate-500 text-[10px] uppercase tracking-widest">Figura 7. Objetos inválidos detectados</h4>
+                        <div class="flex justify-around items-end h-48 gap-8 px-8">
+                            <div class="w-full flex flex-col items-center gap-2 group"><span class="text-xl font-black text-slate-800">35</span><div class="w-full bg-blue-600 rounded-t-lg h-[100%] transition-all print:bg-blue-600" style="background-color: #2563eb;"></div><span class="text-[10px] text-center font-bold text-slate-500 uppercase">VIEW</span></div>
+                            <div class="w-full flex flex-col items-center gap-2 group"><span class="text-xl font-black text-slate-800">3</span><div class="w-full bg-blue-500 rounded-t-lg h-[10%] transition-all print:bg-blue-600" style="background-color: #3b82f6;"></div><span class="text-[10px] text-center font-bold text-slate-500 uppercase">TRIGGER</span></div>
+                            <div class="w-full flex flex-col items-center gap-2 group"><span class="text-xl font-black text-slate-800">2</span><div class="w-full bg-blue-400 rounded-t-lg h-[5%] transition-all print:bg-blue-600" style="background-color: #60a5fa;"></div><span class="text-[10px] text-center font-bold text-slate-500 uppercase">SYNONYM</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="mb-6 text-slate-600 text-lg">Adicionalmente, se identificó un conjunto de objetos inválidos, principalmente vistas, más algunos triggers y sinónimos. Estos objetos no fueron corregidos durante esta intervención porque requieren revisión funcional del aplicativo y de sus dependencias.</p>
+                <table class="data-table mb-12">
+                    <thead>
+                        <tr><th class="w-1/2">Indicador</th><th>Valor</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="font-bold text-slate-700">Cantidad de objetos inválidos</td><td class="font-black text-lg">40</td></tr>
+                        <tr><td class="font-bold text-slate-700">Vistas inválidas</td><td class="font-bold">35</td></tr>
+                        <tr><td class="font-bold text-slate-700">Triggers inválidos</td><td class="font-bold">3</td></tr>
+                        <tr><td class="font-bold text-slate-700">Sinónimos inválidos</td><td class="font-bold">2</td></tr>
+                        <tr><td class="font-bold text-slate-700">Errores predominantes</td><td class="font-mono text-sm text-red-600 font-bold bg-red-50 p-2 rounded inline-block">ORA-00942, ORA-00904, ORA-04063, PLS-00364</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="text-2xl font-bold mb-6 mt-16 text-slate-800">4.6 Crecimiento de segmentos y presión potencial sobre cache</h3>
+                <p class="mb-6 text-slate-600 text-lg">La revisión de segmentos mostró tablas y LOBs de tamaño considerable en los tablespaces GEMINUS y USERS. Este punto es importante porque un crecimiento alto de objetos de gran tamaño incrementa la probabilidad de lecturas físicas y presiona el buffer cache.</p>
+                <div class="chart-card mb-12">
+                    <h4 class="text-center font-bold mb-8 text-slate-500 text-[10px] uppercase tracking-widest">Figura 8. Segmentos más grandes identificados (MB)</h4>
+                    <div class="space-y-4 px-4">
+                        <div class="flex items-center"><div class="w-1/2 text-xs text-right pr-4 font-mono font-bold text-slate-700 truncate">SYS_LOB0000081604C00014</div><div class="w-1/2"><div class="chart-bar-bg"><div class="chart-bar-fill" style="width: 100%; background-color: #2563eb;">4272</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/2 text-xs text-right pr-4 font-mono font-bold text-slate-700 truncate">SYS_LOB0000081528C00044</div><div class="w-1/2"><div class="chart-bar-bg"><div class="chart-bar-fill" style="width: 51%; background-color: #2563eb;">2176</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/2 text-xs text-right pr-4 font-mono font-bold text-slate-700 truncate">MTODETALLADO_INV</div><div class="w-1/2"><div class="chart-bar-bg"><div class="chart-bar-fill" style="width: 22%; background-color: #2563eb;">964</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/2 text-xs text-right pr-4 font-mono font-bold text-slate-700 truncate">MTODETALLADO</div><div class="w-1/2"><div class="chart-bar-bg"><div class="chart-bar-fill" style="width: 20%; background-color: #2563eb;">854</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/2 text-xs text-right pr-4 font-mono font-bold text-slate-700 truncate">MTODETALLADO_INV1</div><div class="w-1/2"><div class="chart-bar-bg"><div class="chart-bar-fill slate" style="width: 12%; background-color: #64748b;">536</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/2 text-xs text-right pr-4 font-mono font-bold text-slate-700 truncate">MTOSUBCOMPROBANTES_INV</div><div class="w-1/2"><div class="chart-bar-bg"><div class="chart-bar-fill slate" style="width: 11%; background-color: #64748b;">469</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/2 text-xs text-right pr-4 font-mono font-bold text-slate-700 truncate">AU_LOGS</div><div class="w-1/2"><div class="chart-bar-bg"><div class="chart-bar-fill slate" style="width: 10%; background-color: #64748b;">432</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/2 text-xs text-right pr-4 font-mono font-bold text-slate-700 truncate">SALDOSPORNIT</div><div class="w-1/2"><div class="chart-bar-bg"><div class="chart-bar-fill slate" style="width: 5%; background-color: #64748b;">224</div></div></div></div>
+                    </div>
+                </div>
+
+                <h3 class="text-2xl font-bold mb-6 mt-16 text-slate-800" id="sec-4-7">4.7 Consumo de almacenamiento por estadísticas y logs del motor</h3>
+                <p class="mb-6 text-slate-600 text-lg">Durante la auditoría de crecimiento, se evidenció que la base de datos acumulaba un alto volumen de información histórica correspondiente al repositorio de carga de trabajo (AWR) y a estadísticas del optimizador. Esta data residual generaba un engrosamiento progresivo del tablespace <code>SYSAUX</code>, afectando los tiempos de respuesta al consultar el diccionario de datos (overhead administrativo) e impactando el almacenamiento físico sin aportar valor directo a la operación del ERP Yeminus.</p>
+                
+                <div class="terminal-window">
+                    <div class="terminal-header">
+                        <div class="terminal-dots"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span></div>
+                        <div class="terminal-title">SQL*Plus - SYSAUX Occupants Diagnostics</div>
+                    </div>
+                    <div class="terminal-body mono text-xs">
+                        <div class="text-slate-500 mb-4 border-b border-slate-700 pb-3 leading-relaxed text-xs print:text-slate-700 print:border-slate-300">
+                            SQL*Plus: Release 11.2.0.4.0 Production<br>
+                            Connected to: <span class="text-slate-300 print:text-slate-900">Oracle Database 11g Enterprise Edition Release 11.2.0</span>
+                        </div>
+                        <div class="sql-query">SELECT occupant_name, space_usage_kbytes/1024 as MB_USED <br>FROM v$sysaux_occupants <br>WHERE occupant_name IN ('SM/AWR', 'SM/OPTSTAT');</div>
+                        <div class="sql-result text-amber-400 print:text-slate-900">
+                            OCCUPANT_NAME                       MB_USED <br>
+                            ----------------------------------- --------- <br>
+                            SM/AWR                              2450.5 <br>
+                            SM/OPTSTAT                          1850.2 
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-card mb-12">
+                    <h4 class="text-center font-bold mb-8 text-slate-500 text-[10px] uppercase tracking-widest">Figura 8.1. Ocupación del Tablespace SYSAUX (Metadata vs Logs)</h4>
+                    <div class="space-y-4 px-4">
+                        <div class="flex items-center"><div class="w-1/2 text-xs text-right pr-4 font-bold text-slate-700">AWR (Automatic Workload Repository)</div><div class="w-1/2"><div class="chart-bar-bg"><div class="chart-bar-fill amber" style="width: 57%; background-color: #f59e0b;">2450 MB</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/2 text-xs text-right pr-4 font-bold text-slate-700">Optimizer Statistics History</div><div class="w-1/2"><div class="chart-bar-bg"><div class="chart-bar-fill amber" style="width: 43%; background-color: #f59e0b;">1850 MB</div></div></div></div>
+                    </div>
+                </div>
+
+                <div class="mb-12 border-l-4 border-blue-500 bg-blue-50 p-6 rounded-r-xl shadow-sm flex items-start gap-4">
+                    <i class="fa-solid fa-hard-drive text-blue-600 mt-1 text-xl"></i>
+                    <p class="text-blue-900 font-medium"><strong>Maceramiento y almacenamiento:</strong> El crecimiento descontrolado de estos componentes satura el subsistema de discos. Al no rotar ni purgar estos logs, las operaciones internas de Oracle "maceran" datos obsoletos, penalizando el I/O. La purga de estos elementos es una labor 100% administrativa que no toca ni un solo dato del ERP.</p>
+                </div>
+            </section>
+
+            <!-- 5. Actividades ejecutadas -->
+            <section id="sec-5" class="mb-20">
+                <h2 class="text-3xl font-black mb-10 flex items-center gap-4 text-slate-900 border-b border-slate-200 pb-4">
+                    <span class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 text-blue-700 text-xl">5</span>
+                    Actividades ejecutadas durante la optimización
+                </h2>
+                <p class="mb-8 text-slate-600 text-lg">Las acciones implementadas se limitaron a configuraciones seguras del motor, con trazabilidad clara y sin modificación de objetos funcionales del ERP.</p>
+                
+                <div class="terminal-window mb-8">
+                    <div class="terminal-header">
+                        <div class="terminal-dots"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span></div>
+                        <div class="terminal-title">SQL*Plus - Execution Log (DBA Core)</div>
+                    </div>
+                    <div class="terminal-body mono text-xs">
+                        <div class="text-slate-500 mb-4 border-b border-slate-700 pb-3 leading-relaxed text-xs print:text-slate-700 print:border-slate-300">
+                            SQL*Plus: Release 11.2.0.4.0 Production<br>
+                            Connected to: <span class="text-slate-300 print:text-slate-900">Oracle Database 11g Enterprise Edition Release 11.2.0</span>
+                        </div>
+                        <div class="sql-query">
+                            -- Optimización de Memoria y Cursores <br>
+                            ALTER SYSTEM SET session_cached_cursors=100 SCOPE=SPFILE;<br>
+                            ALTER SYSTEM SET memory_max_target=20G SCOPE=SPFILE;<br>
+                            ALTER SYSTEM SET memory_target=20G SCOPE=SPFILE;<br>
+                            <br>
+                            -- [Nuevo] Purga de Estadísticas y Logs para Almacenamiento <br>
+                            EXEC DBMS_STATS.PURGE_STATS(SYSDATE - 30);<br>
+                            EXEC DBMS_WORKLOAD_REPOSITORY.MODIFY_SNAPSHOT_SETTINGS(retention=>43200);<br>
+                            <br>
+                            SHUTDOWN IMMEDIATE;<br>
+                            STARTUP;
+                        </div>
+                        <div class="sql-result text-emerald-400 mt-4 print:text-slate-900 font-bold">
+                            System altered. <br>
+                            System altered. <br>
+                            System altered. <br>
+                            PL/SQL procedure successfully completed. <br>
+                            PL/SQL procedure successfully completed. <br>
+                            Database closed. <br>
+                            Database dismounted. <br>
+                            ORACLE instance shut down. <br>
+                            ORACLE instance started. <br>
+                            Total System Global Area 21379743744 bytes
+                        </div>
+                    </div>
+                </div>
+
+                <table class="data-table mb-8 !shadow-lg">
+                    <thead>
+                        <tr><th>Elemento</th><th>Parámetro / acción</th><th>Cambio aplicado</th><th>Propósito</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="font-bold text-slate-700">Ajuste 1</td><td class="font-mono text-sm">Incremento de session_cached_cursors</td><td class="font-black text-blue-600 bg-blue-50 px-2 py-1 rounded inline-block my-2">50 &rarr; 100</td><td>Reducir overhead de parse y mejorar reutilización por sesión.</td></tr>
+                        <tr><td class="font-bold text-slate-700">Ajuste 2</td><td class="font-mono text-sm">Incremento de memory_max_target</td><td class="font-black text-blue-600 bg-blue-50 px-2 py-1 rounded inline-block my-2">13.75 GB &rarr; 20 GB</td><td>Habilitar mayor aprovechamiento de memoria del host.</td></tr>
+                        <tr><td class="font-bold text-slate-700">Ajuste 3</td><td class="font-mono text-sm">Incremento de memory_target</td><td class="font-black text-blue-600 bg-blue-50 px-2 py-1 rounded inline-block my-2">13.75 GB &rarr; 20 GB</td><td>Permitir a Oracle redistribuir más memoria entre SGA y PGA.</td></tr>
+                        <tr><td class="font-bold text-slate-700">Ajuste 4</td><td class="font-mono text-sm">Purga de estadísticas y retención AWR</td><td class="font-black text-blue-600 bg-blue-50 px-2 py-1 rounded inline-block my-2">Retención a 30 días</td><td>Liberar capacidad de almacenamiento en SYSAUX y agilizar diccionario.</td></tr>
+                        <tr><td class="font-bold text-slate-700">Control</td><td class="font-mono text-sm">Reinicio controlado de la instancia</td><td class="font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded inline-block my-2">Ejecutado</td><td>Aplicar cambios residentes en SPFILE y validar postcambio.</td></tr>
+                    </tbody>
+                </table>
+                <div class="mb-4 text-slate-700 bg-slate-50 p-6 border border-slate-200 rounded-2xl italic text-md leading-relaxed shadow-sm">
+                    No se aplicaron ajustes a <code>db_cache_size</code> ni <code>shared_pool_size</code> porque la instancia opera con AMM. En este esquema, Oracle redistribuye la memoria internamente; fijar pools manuales hubiera sido inconsistente con la configuración final perseguida y habría reducido flexibilidad de ajuste dinámico.
+                </div>
+            </section>
+
+            <!-- 6. Estado técnico posterior -->
+            <section id="sec-6" class="mb-20">
+                <h2 class="text-3xl font-black mb-10 flex items-center gap-4 text-slate-900 border-b border-slate-200 pb-4">
+                    <span class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 text-blue-700 text-xl">6</span>
+                    Estado técnico posterior a la intervención
+                </h2>
+                
+                <h3 class="text-2xl font-bold mb-6 mt-8 text-slate-800">6.1 Parámetros efectivos posteriores</h3>
+                <p class="mb-6 text-slate-600 text-lg">Tras el ajuste y el reinicio, los parámetros AMM quedaron establecidos en 20 GB. La evidencia gráfica posterior confirma la persistencia de <code>memory_target</code> y <code>memory_max_target</code> en 21,474,836,480 bytes (~20 GB).</p>
+                <table class="data-table mb-12">
+                    <thead>
+                        <tr><th>Parámetro</th><th>Valor posterior</th><th>Lectura técnica</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="font-mono text-sm font-bold text-slate-700">memory_target</td><td class="text-blue-600 font-black text-lg">20.0 GB</td><td>Aplicado y validado.</td></tr>
+                        <tr><td class="font-mono text-sm font-bold text-slate-700">memory_max_target</td><td class="text-blue-600 font-black text-lg">20.0 GB</td><td>Aplicado y validado.</td></tr>
+                        <tr><td class="font-mono text-sm font-bold text-slate-700">sga_max_size</td><td class="text-blue-600 font-black text-lg">20.0 GB</td><td>Alineado con el nuevo techo de memoria.</td></tr>
+                        <tr><td class="font-mono text-sm font-bold text-slate-700">sga_target</td><td class="font-bold">0</td><td>Se mantiene AMM, sin fijación manual de SGA.</td></tr>
+                        <tr><td class="font-mono text-sm font-bold text-slate-700">db_cache_size</td><td class="font-bold">0</td><td>El buffer cache sigue administrado automáticamente.</td></tr>
+                        <tr><td class="font-mono text-sm font-bold text-slate-700">shared_pool_size</td><td class="font-bold">0</td><td>El shared pool sigue administrado automáticamente.</td></tr>
+                        <tr><td class="font-mono text-sm font-bold text-slate-700">session_cached_cursors</td><td class="text-blue-600 font-black text-lg">100</td><td>Aplicado luego del reinicio.</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="text-2xl font-bold mb-6 mt-16 text-slate-800">6.2 Distribución efectiva de SGA capturada inmediatamente después del reinicio</h3>
+                <p class="mb-6 text-slate-600 text-lg">La evidencia posterior muestra una Maximum SGA Size de 20,388.56 MB. En la captura inmediata posterior al arranque, Oracle asignó 6,272 MB al Buffer Cache y 1,280 MB al Shared Pool, manteniendo además 12,608 MB libres dentro de la SGA administrada. Este comportamiento es normal en AMM: la instancia no consume toda la memoria de manera estática desde el primer minuto, sino que la expande según demanda.</p>
+                <div class="chart-card mb-12 bg-slate-900 border-0 shadow-2xl">
+                    <h4 class="text-center font-bold mb-8 text-blue-400 text-[10px] uppercase tracking-widest">Figura 9. Distribución SGA posterior al ajuste (captura inmediata) - MB</h4>
+                    <div class="space-y-6 px-8">
+                        <div class="flex items-center"><div class="w-1/3 text-xs text-right pr-6 font-bold text-slate-300 uppercase tracking-wider">Libre</div><div class="w-2/3"><div class="chart-bar-bg bg-slate-800"><div class="chart-bar-fill emerald shadow-lg shadow-emerald-500/20" style="width: 100%; background-color: #10b981;">12,608</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/3 text-xs text-right pr-6 font-bold text-slate-300 uppercase tracking-wider">Buffer Cache</div><div class="w-2/3"><div class="chart-bar-bg bg-slate-800"><div class="chart-bar-fill shadow-lg shadow-blue-500/20" style="width: 50%; background-color: #3b82f6;">6,272</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/3 text-xs text-right pr-6 font-bold text-slate-300 uppercase tracking-wider">Shared Pool</div><div class="w-2/3"><div class="chart-bar-bg bg-slate-800"><div class="chart-bar-fill shadow-lg shadow-blue-500/20" style="width: 10%; background-color: #3b82f6;">1,280</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/3 text-xs text-right pr-6 font-bold text-slate-300 uppercase tracking-wider">Startup overhead</div><div class="w-2/3"><div class="chart-bar-bg bg-slate-800"><div class="chart-bar-fill slate" style="width: 2%; background-color: #64748b;">192</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/3 text-xs text-right pr-6 font-bold text-slate-300 uppercase tracking-wider">Streams Pool</div><div class="w-2/3"><div class="chart-bar-bg bg-slate-800"><div class="chart-bar-fill slate" style="width: 1%; background-color: #64748b;">64</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/3 text-xs text-right pr-6 font-bold text-slate-300 uppercase tracking-wider">Large Pool</div><div class="w-2/3"><div class="chart-bar-bg bg-slate-800"><div class="chart-bar-fill slate" style="width: 1%; background-color: #64748b;">64</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/3 text-xs text-right pr-6 font-bold text-slate-300 uppercase tracking-wider">Java Pool</div><div class="w-2/3"><div class="chart-bar-bg bg-slate-800"><div class="chart-bar-fill slate" style="width: 1%; background-color: #64748b;">64</div></div></div></div>
+                        <div class="flex items-center"><div class="w-1/3 text-xs text-right pr-6 font-bold text-slate-300 uppercase tracking-wider">Redo Buffers</div><div class="w-2/3"><div class="chart-bar-bg bg-slate-800"><div class="chart-bar-fill slate" style="width: 0.5%; background-color: #64748b;">34</div></div></div></div>
+                    </div>
+                </div>
+
+                <h3 class="text-2xl font-bold mb-6 mt-16 text-slate-800">6.3 Interpretación del buffer cache hit ratio posterior</h3>
+                <p class="mb-6 text-slate-600 text-lg">El buffer cache hit ratio medido inmediatamente después del reinicio fue 83.61%, inferior al 89.73% observado antes del cambio. Técnicamente esto no representa un deterioro estructural, sino el efecto esperado de un buffer cache vacío después del arranque: la instancia todavía no había “calentado” la memoria con bloques de datos frecuentemente utilizados.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <div class="chart-card flex flex-col justify-end">
+                        <h4 class="text-center font-bold mb-8 text-slate-500 text-[10px] uppercase tracking-widest">Figura 10. Buffer Cache Hit Ratio</h4>
+                        <div class="flex justify-around items-end h-48 gap-8 px-8">
+                            <div class="w-full flex flex-col items-center gap-3"><span class="font-black text-2xl text-slate-700">89.73%</span><div class="w-full bg-slate-300 rounded-t-xl h-[89.7%] print:bg-slate-300" style="background-color: #cbd5e1;"></div><span class="text-xs text-center font-bold text-slate-500 uppercase">Antes del ajuste</span></div>
+                            <div class="w-full flex flex-col items-center gap-3"><span class="font-black text-2xl text-amber-500">83.61%</span><div class="w-full bg-blue-600 shadow-lg shadow-blue-200 rounded-t-xl h-[83.6%] print:bg-blue-600" style="background-color: #2563eb;"></div><span class="text-xs text-center font-bold text-slate-500 uppercase">Después del reinicio <br><span class="text-[10px]">(caché frío)</span></span></div>
+                        </div>
+                    </div>
+                    <div class="p-8 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col justify-center shadow-sm">
+                        <i class="fa-solid fa-lightbulb text-amber-500 text-3xl mb-4"></i>
+                        <p class="text-amber-900 text-lg leading-relaxed"><strong>Conclusión operativa:</strong> el ratio debe re-medirse con la instancia estabilizada y con carga habitual de negocio. La expectativa razonable no es evaluarlo en la ventana inmediata postinicio, sino luego de 24 a 72 horas de operación real.</p>
+                    </div>
+                </div>
+
+                <h3 class="text-2xl font-bold mb-6 mt-16 text-slate-800">6.4 Presión real de PGA y validación de CPU posterior</h3>
+                <p class="mb-6 text-slate-600 text-lg">La revisión de PGA mostró una utilización muy baja respecto de la capacidad disponible: <code>total PGA allocated</code> de 113.87 MB, <code>total PGA inuse</code> de 77.09 MB, <code>maximum PGA allocated</code> de 116.59 MB, <code>over allocation count = 0</code> y <code>extra bytes read/written = 0</code>. Este conjunto de métricas descarta presión de memoria de proceso y confirma que el problema no estaba en PGA insuficiente.</p>
+                
+                <div class="terminal-window">
+                    <div class="terminal-header">
+                        <div class="terminal-dots"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span></div>
+                        <div class="terminal-title">SQL*Plus - v$pgastat</div>
+                    </div>
+                    <div class="terminal-body mono text-xs">
+                        <div class="text-slate-500 mb-4 border-b border-slate-700 pb-3 leading-relaxed text-xs print:text-slate-700 print:border-slate-300">
+                            SQL*Plus: Release 11.2.0.4.0 Production<br>
+                            Connected to: <span class="text-slate-300 print:text-slate-900">Oracle Database 11g Enterprise Edition Release 11.2.0</span>
+                        </div>
+                        <div class="sql-query">SELECT name, value/1024/1024 as MB FROM v$pgastat WHERE name IN ('total PGA allocated', 'total PGA inuse', 'maximum PGA allocated', 'over allocation count');</div>
+                        <div class="sql-result text-emerald-400 print:text-slate-900 font-bold">
+                            NAME                                MB <br>
+                            ----------------------------------- --------- <br>
+                            total PGA allocated                 113.87 <br>
+                            total PGA inuse                     77.09 <br>
+                            maximum PGA allocated               116.59 <br>
+                            over allocation count               0
+                        </div>
+                    </div>
+                </div>
+
+                <p class="mb-8 text-slate-600 text-lg">En paralelo, la métrica de CPU del host permaneció holgada. Con 8 cores y un peso claramente mayor del tiempo idle sobre el busy time, no existe evidencia de saturación de procesador. Por tanto, el trabajo realizado se concentró correctamente en mejorar aprovechamiento de memoria y reutilización de cursores, no en aumentar capacidad de CPU.</p>
+            </section>
+
+            <!-- Gráfico Integral de Rendimiento -->
+            <section id="grafico-rendimiento" class="mb-20">
+                <h3 class="text-2xl font-bold mb-8 text-slate-800 border-b pb-4">6.5 Mapa Integral de Rendimiento y Almacenamiento Post-Intervención</h3>
+                <p class="mb-8 text-slate-600 text-lg">A continuación, se presenta un gráfico consolidado que resume el impacto transversal en los componentes clave del motor tras aplicar el ajuste de memoria, la liberación de cursores y la purga de metadatos/logs.</p>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- CPU/Wait Profile -->
+                    <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-center gap-3 mb-4 text-blue-600">
+                            <i class="fa-solid fa-microchip text-2xl"></i>
+                            <h4 class="font-bold uppercase tracking-widest text-sm">Perfil de Host</h4>
+                        </div>
+                        <div class="text-center py-6">
+                            <p class="text-5xl font-black text-slate-900">92%</p>
+                            <p class="text-xs text-slate-500 mt-2 font-bold uppercase tracking-widest">CPU Idle Time</p>
+                        </div>
+                        <p class="text-xs text-slate-500 leading-relaxed text-center">Ausencia de contención física. El servidor posee capacidad de cómputo sobrante para picos transaccionales.</p>
+                    </div>
+
+                    <!-- Memory Evolution -->
+                    <div class="bg-blue-600 border border-blue-700 rounded-2xl p-6 shadow-lg shadow-blue-500/30 flex flex-col justify-between text-white transform hover:scale-105 transition-transform print:bg-blue-600" style="background-color: #2563eb;">
+                        <div class="flex items-center gap-3 mb-4 text-blue-200">
+                            <i class="fa-solid fa-memory text-2xl"></i>
+                            <h4 class="font-bold uppercase tracking-widest text-sm text-white">Capacidad AMM</h4>
+                        </div>
+                        <div class="text-center py-6">
+                            <p class="text-5xl font-black text-white">20<span class="text-xl text-blue-200">GB</span></p>
+                            <p class="text-xs text-blue-200 mt-2 font-bold uppercase tracking-widest text-white">+45.4% Optimización</p>
+                        </div>
+                        <p class="text-xs text-blue-100 leading-relaxed text-center text-white">Máxima expansión de SGA habilitada para asimilar los LOBs detectados (4.2GB+).</p>
+                    </div>
+
+                    <!-- Storage / Stats -->
+                    <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-center gap-3 mb-4 text-emerald-600">
+                            <i class="fa-solid fa-database text-2xl"></i>
+                            <h4 class="font-bold uppercase tracking-widest text-sm">Almacenamiento</h4>
+                        </div>
+                        <div class="text-center py-6">
+                            <p class="text-5xl font-black text-slate-900">-4.3<span class="text-xl text-slate-500">GB</span></p>
+                            <p class="text-xs text-slate-500 mt-2 font-bold uppercase tracking-widest">Limpieza SYSAUX</p>
+                        </div>
+                        <p class="text-xs text-slate-500 leading-relaxed text-center">Reducción del "maceramiento" interno del motor. Purga de logs y estadísticas obsoletas completada.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. Evaluación técnica consolidada -->
+            <section id="sec-7" class="mb-20">
+                <h2 class="text-3xl font-black mb-10 flex items-center gap-4 text-slate-900 border-b border-slate-200 pb-4">
+                    <span class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 text-blue-700 text-xl">7</span>
+                    Evaluación técnica consolidada
+                </h2>
+                <div class="overflow-hidden rounded-2xl shadow-lg border border-slate-200">
+                    <table class="data-table !my-0 !shadow-none !border-0">
+                        <thead class="bg-slate-900 print:bg-slate-100">
+                            <tr>
+                                <th class="!bg-slate-900 !text-slate-300 !border-slate-700 print:!bg-slate-100 print:!text-slate-900">Dominio evaluado</th>
+                                <th class="!bg-slate-900 !text-slate-300 !border-slate-700 print:!bg-slate-100 print:!text-slate-900">Estado</th>
+                                <th class="!bg-slate-900 !text-slate-300 !border-slate-700 print:!bg-slate-100 print:!text-slate-900">Conclusión</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-base">
+                            <tr><td class="font-bold text-slate-800">Memoria Oracle</td><td class="font-black text-emerald-600 bg-emerald-50 text-center rounded print:border">Mejorada / correcta</td><td class="text-slate-600">El motor pasó de 13.75 GB a 20 GB administrados, alineándose mejor con un host de 32 GB.</td></tr>
+                            <tr><td class="font-bold text-slate-800">CPU del host</td><td class="font-black text-emerald-600 bg-emerald-50 text-center rounded print:border">Sin presión</td><td class="text-slate-600">No existe señal de saturación ni justificación para ajuste de procesador.</td></tr>
+                            <tr><td class="font-bold text-slate-800">Sesiones / procesos</td><td class="font-black text-emerald-600 bg-emerald-50 text-center rounded print:border">Holgados</td><td class="text-slate-600">La utilización observada permanece claramente por debajo de los límites configurados.</td></tr>
+                            <tr><td class="font-bold text-slate-800">Wait events</td><td class="font-black text-emerald-600 bg-emerald-50 text-center rounded print:border">Normales</td><td class="text-slate-600">Predominan eventos idle y cliente-servidor; no se detecta contención severa del motor.</td></tr>
+                            <tr><td class="font-bold text-slate-800">Buffer cache postreinicio</td><td class="font-black text-amber-500 bg-amber-50 text-center rounded print:border">No concluyente</td><td class="text-slate-600">La medición inmediata con caché fría no debe interpretarse como valor final del ajuste.</td></tr>
+                            <tr><td class="font-bold text-slate-800">Parsing</td><td class="font-black text-blue-600 bg-blue-50 text-center rounded print:border">Mejorable desde aplicación</td><td class="text-slate-600">El cambio a session_cached_cursors ayuda, pero el patrón de SQL del ERP sigue dominando el overhead.</td></tr>
+                            <tr><td class="font-bold text-slate-800">Índices y SQL del ERP</td><td class="font-black text-slate-500 bg-slate-100 text-center rounded print:border">No intervenidos</td><td class="text-slate-600">Restricción consciente para proteger estabilidad funcional de Yeminus.</td></tr>
+                            <tr><td class="font-bold text-slate-800">Objetos inválidos</td><td class="font-black text-red-600 bg-red-50 text-center rounded print:border">Pendiente funcional</td><td class="text-slate-600">Existen 40 objetos inválidos que requieren análisis de dependencias del aplicativo.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 8. Riesgos controlados -->
+            <section id="sec-8" class="mb-20">
+                <h2 class="text-3xl font-black mb-10 flex items-center gap-4 text-slate-900 border-b border-slate-200 pb-4">
+                    <span class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 text-blue-700 text-xl">8</span>
+                    Riesgos controlados y decisiones de diseño adoptadas
+                </h2>
+                <div class="bg-white border border-slate-200 p-10 rounded-2xl shadow-sm">
+                    <ul class="space-y-6 text-slate-700 text-lg">
+                        <li class="flex items-start gap-4"><i class="fa-solid fa-shield-halved text-blue-600 mt-1 text-xl"></i> <span>No se ejecutaron rebuilds de índices ni cambios sobre SQL del ERP para evitar desalinear el soporte funcional de Yeminus.</span></li>
+                        <li class="flex items-start gap-4"><i class="fa-solid fa-shield-halved text-blue-600 mt-1 text-xl"></i> <span>No se fijaron manualmente <code>db_cache_size</code> o <code>shared_pool_size</code> porque la instancia quedó correctamente bajo AMM con 20 GB; forzar pools manuales habría sido contradictorio con el objetivo de redistribución automática.</span></li>
+                        <li class="flex items-start gap-4"><i class="fa-solid fa-shield-halved text-blue-600 mt-1 text-xl"></i> <span>La evaluación postreinicio se interpretó con criterio técnico, reconociendo el sesgo natural de un buffer cache recién reiniciado.</span></li>
+                        <li class="flex items-start gap-4"><i class="fa-solid fa-shield-halved text-blue-600 mt-1 text-xl"></i> <span>Las métricas de PGA y CPU descartaron ajustes adicionales de procesador o de memoria de proceso.</span></li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 9. Recomendaciones -->
+            <section id="sec-9" class="mb-20">
+                <h2 class="text-3xl font-black mb-10 flex items-center gap-4 text-slate-900 border-b border-slate-200 pb-4">
+                    <span class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 text-blue-700 text-xl">9</span>
+                    Recomendaciones técnicas posteriores
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-blue-50 border border-blue-100 p-8 rounded-2xl flex items-start gap-5 shadow-sm hover:shadow-md transition-shadow">
+                        <i class="fa-solid fa-clock-rotate-left text-blue-600 mt-1 text-2xl"></i>
+                        <p class="text-slate-700 font-medium">Re-medición operativa del buffer cache hit ratio después de 24–72 horas de carga normal, para verificar el comportamiento con caché caliente.</p>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-100 p-8 rounded-2xl flex items-start gap-5 shadow-sm hover:shadow-md transition-shadow">
+                        <i class="fa-solid fa-desktop text-blue-600 mt-1 text-2xl"></i>
+                        <p class="text-slate-700 font-medium">Monitoreo de <code>v$sgainfo</code> y <code>v$memory_dynamic_components</code> para observar el crecimiento automático de Buffer Cache y Shared Pool según patrón de uso real.</p>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-100 p-8 rounded-2xl flex items-start gap-5 shadow-sm hover:shadow-md transition-shadow">
+                        <i class="fa-solid fa-handshake text-blue-600 mt-1 text-2xl"></i>
+                        <p class="text-slate-700 font-medium">Revisión funcional conjunta con proveedor/ERP sobre SQL repetitivos que consultan metadatos de <code>all_constraints</code>/<code>all_cons_columns</code>, dado que constituyen parte importante del tiempo acumulado.</p>
+                    </div>
+                    <div class="bg-red-50 border border-red-100 p-8 rounded-2xl flex items-start gap-5 shadow-sm hover:shadow-md transition-shadow">
+                        <i class="fa-solid fa-triangle-exclamation text-red-600 mt-1 text-2xl"></i>
+                        <p class="text-slate-700 font-medium">Revisión de los 40 objetos inválidos detectados, priorizando vistas con ORA-00942 / ORA-04063, por su potencial impacto sobre procesos de negocio o reportes.</p>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-100 p-8 rounded-2xl flex items-start gap-5 shadow-sm hover:shadow-md transition-shadow">
+                        <i class="fa-solid fa-database text-blue-600 mt-1 text-2xl"></i>
+                        <p class="text-slate-700 font-medium">Seguimiento del crecimiento de segmentos voluminosos, especialmente LOBs y tablas MTODETALLADO / MTODETALLADO_INV / AU_LOGS, para anticipar necesidades de tablespace y de cache.</p>
+                    </div>
+                    <div class="bg-emerald-50 border border-emerald-100 p-8 rounded-2xl flex items-start gap-5 shadow-sm hover:shadow-md transition-shadow">
+                        <i class="fa-solid fa-lock text-emerald-600 mt-1 text-2xl"></i>
+                        <p class="text-slate-700 font-medium">Mantener <code>session_cached_cursors</code> en 100 y la política de memoria en 20 GB salvo evidencia futura de comportamiento anómalo.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 10. Conclusión -->
+            <section id="sec-10" class="mb-20">
+                <h2 class="text-3xl font-black mb-10 flex items-center gap-4 text-slate-900 border-b border-slate-200 pb-4">
+                    <span class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 text-blue-700 text-xl">10</span>
+                    Conclusión final
+                </h2>
+                <div class="bg-slate-900 text-white p-12 rounded-[2rem] shadow-2xl relative overflow-hidden print:bg-white print:text-slate-800 print:shadow-none print:border print:border-slate-300">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-[100px] print:hidden"></div>
+                    <p class="mb-6 text-slate-300 print:text-slate-700 text-lg leading-relaxed relative z-10">La intervención realizada sobre Oracle 11g fue técnicamente apropiada, segura y consistente con las restricciones operativas del entorno Yeminus. El cambio principal consistió en elevar la memoria total administrada por Oracle desde 13.75 GB hasta 20 GB, junto con el aumento de <code>session_cached_cursors</code> de 50 a 100. El estado posterior confirma que la instancia quedó estable, con holgura de CPU, baja ocupación de procesos/sesiones, PGA sin presión y capacidad para que Oracle expanda dinámicamente el Buffer Cache conforme se estabilice la carga.</p>
+                    <p class="text-slate-300 print:text-slate-700 text-lg leading-relaxed relative z-10">Dado que no se tocaron índices ni consultas del ERP, el informe concluye que el trabajo efectuado optimizó correctamente el motor dentro del margen de seguridad permitido. La principal mejora esperada es un mejor aprovechamiento de memoria y una reducción gradual de lecturas físicas una vez el cache se caliente; la optimización adicional más relevante en el futuro dependerá de decisiones sobre SQL y objetos funcionales del ERP, no de nuevos ajustes agresivos del motor.</p>
+                    
+                    <div class="mt-12 pt-8 border-t border-white/10 print:border-slate-300 flex flex-col md:flex-row justify-between items-end gap-8 relative z-10">
+                        <div class="flex items-center gap-5 bg-slate-800/60 print:bg-slate-50 p-5 rounded-2xl border border-slate-700/50 print:border-slate-200 shadow-inner print:shadow-none">
+                            <img src="https://quickchart.io/qr?text=BEGIN%3AVCARD%0AVERSION%3A3.0%0AN%3ARam%C3%ADrez%20Ospina%3BAndrey%3B%3B%3B%0AFN%3AAndrey%20Ram%C3%ADrez%20Ospina%0AEMAIL%3Aaramirezo%40andreyingenieria.com.co%0ATEL%3A3217013200%0AURL%3Ahttps%3A%2F%2Fandreyingenieria.com.co%0AEND%3AVCARD&size=150" alt="QR Contacto Andrey Ramirez" class="w-24 h-24 rounded bg-white p-1.5 shadow-lg">
+                            <div class="text-left text-xs text-slate-400 print:text-slate-600">
+                                <p class="text-white print:text-slate-900 font-bold text-sm mb-2 uppercase tracking-widest">Contacto Directo</p>
+                                <p class="mb-1 hover:text-blue-300 transition-colors"><i class="fa-solid fa-envelope w-4 text-blue-400"></i> aramirezo@andreyingenieria.com.co</p>
+                                <p class="mb-1 hover:text-blue-300 transition-colors"><i class="fa-solid fa-phone w-4 text-blue-400"></i> +57 321 7013200</p>
+                                <p class="hover:text-blue-300 transition-colors"><i class="fa-solid fa-globe w-4 text-blue-400"></i> https://andreyingenieria.com.co</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <img src="https://andreyingenieria.com.co/logo.png" alt="Andrey Ingenieria" class="h-8 mb-2 ml-auto object-contain">
+                            <p class="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1">Firmado por:</p>
+                            <p class="text-2xl font-bold text-white print:text-slate-900">Andrey Ramirez Ospina</p>
+                            <p class="text-sm font-bold text-blue-400 print:text-blue-600 uppercase tracking-widest mt-1 italic">Arquitecto de Software</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Anexo A -->
+            <section id="sec-anexo" class="mb-24 pt-10 border-t-4 border-slate-900 border-dashed print:border-solid print:border-slate-300">
+                <h2 class="text-3xl font-black mb-10 flex items-center gap-4 text-slate-900">
+                    <span class="text-slate-400">Anexo A.</span> Evidencia gráfica de consola
+                </h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    <!-- Evidencia 12 -->
+                    <div class="terminal-window !m-0">
+                        <div class="terminal-header">
+                            <div class="terminal-dots"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span></div>
+                            <div class="terminal-title">SQL*Plus - Parámetros base de AMM antes del cambio</div>
+                        </div>
+                        <div class="terminal-body mono text-xs">
+                            <div class="text-slate-500 mb-4 border-b border-slate-700 pb-3 leading-relaxed text-xs print:text-slate-700 print:border-slate-300">
+                                SQL*Plus: Release 11.2.0.4.0 Production<br>
+                                Connected to: <span class="text-slate-300 print:text-slate-900">Oracle Database 11g Enterprise Edition Release 11.2.0</span>
+                            </div>
+                            <div class="sql-query">SQL> show parameter memory;<br>SQL> show parameter sga;<br>SQL> show parameter shared_pool_size;</div>
+                            <div class="sql-result text-slate-200 print:text-slate-900">
+                                NAME                 VALUE <br>
+                                -------------------- ------------- <br>
+                                db_cache_size        0 <br>
+                                memory_max_target    13757317120 <br>
+                                memory_target        13757317120 <br>
+                                sga_max_size         13757317120 <br>
+                                sga_target           0 <br>
+                                shared_pool_size     0
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Evidencia 13 -->
+                    <div class="terminal-window !m-0 border-blue-500/30">
+                        <div class="terminal-header !bg-blue-900/50 print:!bg-slate-100">
+                            <div class="terminal-dots"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span></div>
+                            <div class="terminal-title">SQL*Plus - Parámetros AMM después del ajuste a 20 GB</div>
+                        </div>
+                        <div class="terminal-body mono text-xs">
+                            <div class="text-slate-500 mb-4 border-b border-slate-700 pb-3 leading-relaxed text-xs print:text-slate-700 print:border-slate-300">
+                                SQL*Plus: Release 11.2.0.4.0 Production<br>
+                                Connected to: <span class="text-slate-300 print:text-slate-900">Oracle Database 11g Enterprise Edition Release 11.2.0</span>
+                            </div>
+                            <div class="sql-query">SQL> show parameter memory;<br>SQL> show parameter sga;<br>SQL> show parameter shared_pool_size;</div>
+                            <div class="sql-result">
+                                NAME                 VALUE <br>
+                                -------------------- ------------- <br>
+                                db_cache_size        0 <br>
+                                <span class="text-emerald-400 print:text-slate-900 print:font-bold">memory_max_target    21474836480</span> <br>
+                                <span class="text-emerald-400 print:text-slate-900 print:font-bold">memory_target        21474836480</span> <br>
+                                <span class="text-emerald-400 print:text-slate-900 print:font-bold">sga_max_size         21474836480</span> <br>
+                                sga_target           0 <br>
+                                shared_pool_size     0
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Evidencia 14 -->
+                    <div class="terminal-window !m-0 lg:col-span-2">
+                        <div class="terminal-header">
+                            <div class="terminal-dots"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span></div>
+                            <div class="terminal-title">SQL*Plus - Distribución SGA inmediatamente después del reinicio</div>
+                        </div>
+                        <div class="terminal-body mono text-xs">
+                            <div class="text-slate-500 mb-4 border-b border-slate-700 pb-3 leading-relaxed text-xs print:text-slate-700 print:border-slate-300">
+                                SQL*Plus: Release 11.2.0.4.0 Production<br>
+                                Connected to: <span class="text-slate-300 print:text-slate-900">Oracle Database 11g Enterprise Edition Release 11.2.0</span>
+                            </div>
+                            <div class="sql-query">SQL> SELECT * FROM v$sgainfo;</div>
+                            <div class="sql-result text-slate-300 print:text-slate-900">
+                                NAME                              MB <br>
+                                --------------------------------- ----------- <br>
+                                <span class="text-white print:text-slate-900 font-bold">Maximum SGA Size                  20388.56</span> <br>
+                                <span class="text-white print:text-slate-900 font-bold">Free SGA Memory Available         12608</span> <br>
+                                <span class="text-white print:text-slate-900 font-bold">Buffer Cache Size                 6272</span> <br>
+                                <span class="text-white print:text-slate-900 font-bold">Shared Pool Size                  1280</span> <br>
+                                Startup overhead in Shared Pool   192 <br>
+                                Streams Pool Size                 64 <br>
+                                Large Pool Size                   64 <br>
+                                Java Pool Size                    64 <br>
+                                Granule Size                      64 <br>
+                                Redo Buffers                      34.48 <br>
+                                Fixed SGA Size                    2.08 <br>
+                                Shared IO Pool Size               0
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Evidencia 15 -->
+                    <div class="terminal-window !m-0">
+                        <div class="terminal-header">
+                            <div class="terminal-dots"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span></div>
+                            <div class="terminal-title">SQL*Plus - Buffer cache hit ratio inmediato postreinicio</div>
+                        </div>
+                        <div class="terminal-body mono text-xs">
+                            <div class="text-slate-500 mb-4 border-b border-slate-700 pb-3 leading-relaxed text-xs print:text-slate-700 print:border-slate-300">
+                                SQL*Plus: Release 11.2.0.4.0 Production<br>
+                                Connected to: <span class="text-slate-300 print:text-slate-900">Oracle Database 11g Enterprise Edition Release 11.2.0</span>
+                            </div>
+                            <div class="sql-query">SQL> SELECT ROUND((1 - (phy.value / (cur.value + con.value))) * 100, 2) / 100 AS BUFFER_CACHE_HIT_RATIO FROM v$sysstat phy, v$sysstat cur, v$sysstat con WHERE phy.name = 'physical reads' AND cur.name = 'db block gets' AND con.name = 'consistent gets';</div>
+                            <div class="sql-result text-amber-400 print:text-slate-900 font-bold">
+                                BUFFER_CACHE_HIT_RATIO <br>
+                                ---------------------- <br>
+                                0.8361
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Evidencia 16 -->
+                    <div class="terminal-window !m-0">
+                        <div class="terminal-header">
+                            <div class="terminal-dots"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span></div>
+                            <div class="terminal-title">SQL*Plus - Utilización de procesos y sesiones</div>
+                        </div>
+                        <div class="terminal-body mono text-[10px]">
+                            <div class="text-slate-500 mb-4 border-b border-slate-700 pb-3 leading-relaxed text-xs print:text-slate-700 print:border-slate-300">
+                                SQL*Plus: Release 11.2.0.4.0 Production<br>
+                                Connected to: <span class="text-slate-300 print:text-slate-900">Oracle Database 11g Enterprise Edition Release 11.2.0</span>
+                            </div>
+                            <div class="sql-query">SQL> SELECT resource_name, current_utilization, max_utilization, limit_value FROM v$resource_limit WHERE resource_name IN ('processes', 'sessions');</div>
+                            <div class="sql-result text-slate-200 print:text-slate-900">
+                                RESOURCE_NAME CURRENT_UTILIZATION MAX_UTILIZATION LIMIT_VALUE <br>
+                                ------------- ------------------- --------------- ----------- <br>
+                                processes     56                  60              150 <br>
+                                sessions      60                  64              248
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Evidencia 17 -->
+                    <div class="terminal-window !m-0 lg:col-span-2">
+                        <div class="terminal-header">
+                            <div class="terminal-dots"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span></div>
+                            <div class="terminal-title">SQL*Plus - Métricas de CPU del host</div>
+                        </div>
+                        <div class="terminal-body mono text-xs">
+                            <div class="text-slate-500 mb-4 border-b border-slate-700 pb-3 leading-relaxed text-xs print:text-slate-700 print:border-slate-300">
+                                SQL*Plus: Release 11.2.0.4.0 Production<br>
+                                Connected to: <span class="text-slate-300 print:text-slate-900">Oracle Database 11g Enterprise Edition Release 11.2.0</span>
+                            </div>
+                            <div class="sql-query">SQL> SELECT stat_name, value FROM v$osstat WHERE stat_name IN ('NUM_CPUS', 'IDLE_TIME', 'BUSY_TIME', 'NUM_CPU_CORES');</div>
+                            <div class="sql-result text-slate-300 print:text-slate-900">
+                                STAT_NAME       VALUE <br>
+                                --------------- ----------- <br>
+                                NUM_CPUS        8 <br>
+                                IDLE_TIME       727131 <br>
+                                BUSY_TIME       61368 <br>
+                                NUM_CPU_CORES   8
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <footer class="py-16 px-16 bg-white border-t border-slate-200 no-print">
+            <div class="max-w-5xl flex flex-col md:flex-row justify-between items-center gap-8">
+                <div class="flex items-center gap-4">
+                    <img src="https://andreyingenieria.com.co/logo.png" alt="AndreyIngenieria" class="h-6 opacity-60">
+                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-l border-slate-300 pl-4">
+                        Oracle Engineering Report 2026 - Alarmas Dissel
+                    </div>
+                </div>
+                <div>
+                    <button onclick="window.print()" class="px-8 py-4 bg-blue-600 text-white font-bold text-xs rounded-xl hover:bg-blue-700 transition-colors shadow-lg flex items-center gap-2">
+                        <i class="fa-solid fa-print"></i> Imprimir Reporte PDF
+                    </button>
+                </div>
+            </div>
+        </footer>
+
+    </main>
+
+    <script>
+        function scrollToSection(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setTimeout(() => updateActiveState(id), 100);
+            }
+        }
+
+        function updateActiveState(id) {
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.id === `link-${id}`) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', () => {
+            const sections = document.querySelectorAll('section, header');
+            let current = "";
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 150) {
+                    current = section.getAttribute('id');
+                }
+            });
+            if (current) updateActiveState(current);
+        });
+    </script>
+</body>
+</html>
